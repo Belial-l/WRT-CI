@@ -6,15 +6,13 @@ if [ -d "libs/gettext-full" ]; then
     if grep -q "PKG_VERSION:=1.0" libs/gettext-full/Makefile; then
         echo "Detected buggy gettext 1.0, reverting to stable 0.24.x..."
         rm -rf libs/gettext-full
-        
-        # 从 OpenWrt 官方 24.10 稳定分支拉取 gettext
+
         git clone --depth 1 --branch openwrt-24.10 --filter=blob:none --sparse https://github.com/openwrt/openwrt.git /tmp/openwrt-core
         cd /tmp/openwrt-core
         git sparse-checkout set package/libs/gettext-full
-        
-        # 覆盖到当前源码树
+
         cp -rf package/libs/gettext-full $GITHUB_WORKSPACE/wrt/package/libs/
-        
+
         cd $GITHUB_WORKSPACE/wrt/package
         rm -rf /tmp/openwrt-core
         echo "gettext-full reverted successfully!"
@@ -31,7 +29,25 @@ fi
 rm -rf ../feeds/luci/applications/luci-app-{passwall*,mosdns,dockerman,dae*,bypass*}
 rm -rf ../feeds/packages/net/{v2ray-geodata,dae*}
 
+#复制本地自定义包（dae / luci-app-dae / v2ray-geodata）进入编译树
 cp -r $GITHUB_WORKSPACE/package/v2ray-geodata ./
-#修复daed/Makefile
-sed -i 's/pnpm install ; /pnpm install --no-frozen-lockfile ; /g' luci-app-daed/daed/Makefile
-sed -i 's|/run/i  procd_set_param|/procd_set_param command/i \tprocd_set_param|g' luci-app-daed/luci-app-daed/root/etc/init.d/luci_daed
+cp -r $GITHUB_WORKSPACE/package/dae ./
+cp -r $GITHUB_WORKSPACE/package/luci-app-dae ./
+echo "local packages copied: dae, luci-app-dae, v2ray-geodata"
+
+#修复 dae/daed 相关文件（仅当目标文件存在时才执行，杜绝因文件缺失而中断）
+for MK_FILE in luci-app-daed/daed/Makefile dae/Makefile luci-app-dae/Makefile; do
+	if [ -f "$MK_FILE" ]; then
+		sed -i 's/pnpm install ; /pnpm install --no-frozen-lockfile ; /g' "$MK_FILE"
+		echo "fixed pnpm: $MK_FILE"
+	fi
+done
+
+for INIT_FILE in $(find . -maxdepth 5 -type f -path "*root/etc/init.d/*dae*" 2>/dev/null); do
+	if grep -q "/run/i  procd_set_param" "$INIT_FILE" 2>/dev/null; then
+		sed -i 's|/run/i  procd_set_param|/procd_set_param command/i \tprocd_set_param|g' "$INIT_FILE"
+		echo "fixed init: $INIT_FILE"
+	fi
+done
+
+echo "Custom packages done!"
