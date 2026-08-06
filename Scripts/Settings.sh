@@ -56,19 +56,3 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 		echo "qualcommax set up nowifi successfully!"
 	fi
 fi
-
-# ===== 强制注入 DAED 运行所需的 eBPF 与 BTF 内核依赖 =====
-echo "Injecting eBPF, BTF and BPF_EVENTS kernel configurations for DAED..."
-./scripts/config -e KERNEL_BPF_SYSCALL
-./scripts/config -e KERNEL_BPF_JIT
-./scripts/config -e KERNEL_HAVE_EBPF_JIT
-./scripts/config -e KERNEL_BPF_JIT_ALWAYS_ON
-./scripts/config -e KERNEL_BPF_EVENTS          # DAED 强依赖此事件钩子
-./scripts/config -e KERNEL_DEBUG_INFO
-./scripts/config -e KERNEL_DEBUG_INFO_BTF      # DAED 强依赖 BTF 解析内核结构
-./scripts/config -e KERNEL_DEBUG_INFO_BTF_MODULES
-./scripts/config -e KERNEL_XDP_SOCKETS
-./scripts/config -e KERNEL_NET_CLS_BPF
-./scripts/config -e KERNEL_NET_ACT_BPF
-echo "DAED dependencies injected successfully!"
-# ====================================================
