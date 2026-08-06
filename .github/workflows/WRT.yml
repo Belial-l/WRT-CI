@@ -3,11 +3,9 @@ name: WRT
 
 #CI计划
 on:
-  #自动编译：当Auto-Clean运行完成后
-  workflow_run:
-    workflows: ["Auto-Clean"]
-    types:
-      - completed
+  #自动编译：北京时间每天早上 7:00（UTC 23:00）独立定时，不再依赖 Auto-Clean 接力
+  schedule:
+    - cron: '0 23 * * *'
   #手动编译
   workflow_dispatch:
     inputs:
