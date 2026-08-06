@@ -64,12 +64,13 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 	fi
 fi
 
-# ===== 强制开启 eBPF 与 BTF 支持 (DAED 核心依赖) =====
+# ===== 强制开启 eBPF 与 BTF 支持 (DAE/DAED 核心依赖) =====
 echo "Injecting eBPF and BTF kernel configurations..."
 ./scripts/config -e KERNEL_BPF_SYSCALL
 ./scripts/config -e KERNEL_BPF_JIT
 ./scripts/config -e KERNEL_HAVE_EBPF_JIT
 ./scripts/config -e KERNEL_BPF_JIT_ALWAYS_ON
+./scripts/config -e KERNEL_BPF_EVENTS
 ./scripts/config -e KERNEL_DEBUG_INFO
 ./scripts/config -e KERNEL_DEBUG_INFO_BTF
 ./scripts/config -e KERNEL_DEBUG_INFO_BTF_MODULES
