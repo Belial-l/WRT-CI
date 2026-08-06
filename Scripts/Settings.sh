@@ -1,5 +1,5 @@
 #!/bin/bash
-. $(dirname "$(realpath "$0")")/function.sh
+
 #移除luci-app-attendedsysupgrade
 sed -i "/attendedsysupgrade/d" $(find ./feeds/luci/collections/ -type f -name "Makefile")
 #修改默认主题
@@ -29,8 +29,6 @@ sed -i "s/192\.168\.[0-9]*\.[0-9]*/$WRT_IP/g" $CFG_FILE
 #修改默认主机名
 sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 
-#vlmcsd_patches="./feeds/packages/net/vlmcsd/patches/"
-#mkdir -p $vlmcsd_patches && cp -f ../patches/001-fix_compile_with_ccache.patch $vlmcsd_patches
 sed -i 's/mirrors.vsean.net\/openwrt/mirror.nju.edu.cn\/immortalwrt/g' ./package/emortal/default-settings/files/99-default-settings-chinese
 sed -i "s/DirectInterface/Interface/g" ./package/network/services/dropbear/files/dropbear.config
 
@@ -65,3 +63,18 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 		echo "qualcommax set up nowifi successfully!"
 	fi
 fi
+
+# ===== 强制开启 eBPF 与 BTF 支持 (DAED 核心依赖) =====
+echo "Injecting eBPF and BTF kernel configurations..."
+./scripts/config -e KERNEL_BPF_SYSCALL
+./scripts/config -e KERNEL_BPF_JIT
+./scripts/config -e KERNEL_HAVE_EBPF_JIT
+./scripts/config -e KERNEL_BPF_JIT_ALWAYS_ON
+./scripts/config -e KERNEL_DEBUG_INFO
+./scripts/config -e KERNEL_DEBUG_INFO_BTF
+./scripts/config -e KERNEL_DEBUG_INFO_BTF_MODULES
+./scripts/config -e KERNEL_XDP_SOCKETS
+./scripts/config -e KERNEL_NET_CLS_BPF
+./scripts/config -e KERNEL_NET_ACT_BPF
+echo "eBPF and BTF configurations injected successfully!"
+# ====================================================
