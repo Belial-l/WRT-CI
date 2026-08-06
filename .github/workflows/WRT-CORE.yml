@@ -57,6 +57,7 @@ env:
   WRT_PW: ${{inputs.WRT_PW}}
   WRT_REPO: ${{inputs.WRT_REPO}}
   WRT_BRANCH: ${{inputs.WRT_BRANCH}}
+  WRT_SOURCE: ${{inputs.WRT_SOURCE}}
   WRT_PACKAGE: ${{inputs.WRT_PACKAGE}}
   WRT_TEST: ${{inputs.WRT_TEST}}
   WRT_DIR: 'wrt'
@@ -245,7 +246,7 @@ jobs:
       - name: Release Firmware
         uses: softprops/action-gh-release@master
         with:
-          tag_name: ${{env.CI_NAME}}-${{env.WRT_CONFIG}}_${{env.WRT_DATE}}
+          tag_name: ${{ env.CI_NAME || 'WRT' }}-${{env.WRT_CONFIG}}_${{env.WRT_DATE}}
           files: ./wrt/upload/*.*
           body: |
             这是个平台固件包，内含多个设备！
