@@ -25,29 +25,8 @@ if [ -f "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh" ]; then
 	source "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh"
 fi
 
-#删除官方的默认插件
+#清理官方 feeds 中可能与自定义环境冲突的代理/规则包，保持编译树干净
 rm -rf ../feeds/luci/applications/luci-app-{passwall*,mosdns,dockerman,dae*,bypass*}
 rm -rf ../feeds/packages/net/{v2ray-geodata,dae*}
 
-#复制本地自定义包（dae / luci-app-dae / v2ray-geodata）进入编译树
-cp -r $GITHUB_WORKSPACE/package/v2ray-geodata ./
-cp -r $GITHUB_WORKSPACE/package/dae ./
-cp -r $GITHUB_WORKSPACE/package/luci-app-dae ./
-echo "local packages copied: dae, luci-app-dae, v2ray-geodata"
-
-#修复 dae/daed 相关文件（仅当目标文件存在时才执行，杜绝因文件缺失而中断）
-for MK_FILE in luci-app-daed/daed/Makefile dae/Makefile luci-app-dae/Makefile; do
-	if [ -f "$MK_FILE" ]; then
-		sed -i 's/pnpm install ; /pnpm install --no-frozen-lockfile ; /g' "$MK_FILE"
-		echo "fixed pnpm: $MK_FILE"
-	fi
-done
-
-for INIT_FILE in $(find . -maxdepth 5 -type f -path "*root/etc/init.d/*dae*" 2>/dev/null); do
-	if grep -q "/run/i  procd_set_param" "$INIT_FILE" 2>/dev/null; then
-		sed -i 's|/run/i  procd_set_param|/procd_set_param command/i \tprocd_set_param|g' "$INIT_FILE"
-		echo "fixed init: $INIT_FILE"
-	fi
-done
-
-echo "Custom packages done!"
+echo "Environment cleaned. Ready for eBPF dependency build!"
