@@ -12,21 +12,15 @@ sed -i "s/(\(luciversion || ''\))/(\1) + (' \/ WRT-$WRT_DATE')/g" $(find ./feeds
 WIFI_SH=$(find ./target/linux/{mediatek/filogic,qualcommax}/base-files/etc/uci-defaults/ -type f -name "*set-wireless.sh" 2>/dev/null)
 WIFI_UC="./package/network/config/wifi-scripts/files/lib/wifi/mac80211.uc"
 if [ -f "$WIFI_SH" ]; then
-	#修改WIFI名称
 	sed -i "s/BASE_SSID='.*'/BASE_SSID='$WRT_SSID'/g" $WIFI_SH
-	#修改WIFI密码
 	sed -i "s/BASE_WORD='.*'/BASE_WORD='$WRT_WORD'/g" $WIFI_SH
 elif [ -f "$WIFI_UC" ]; then
-	#修改WIFI名称
 	sed -i "s/ssid='.*'/ssid='$WRT_SSID'/g" $WIFI_UC
-	#修改WIFI密码
 	sed -i "s/key='.*'/key='$WRT_WORD'/g" $WIFI_UC
 fi
 
 CFG_FILE="./package/base-files/files/bin/config_generate"
-#修改默认IP地址
 sed -i "s/192\.168\.[0-9]*\.[0-9]*/$WRT_IP/g" $CFG_FILE
-#修改默认主机名
 sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 
 sed -i 's/mirrors.vsean.net\/openwrt/mirror.nju.edu.cn\/immortalwrt/g' ./package/emortal/default-settings/files/99-default-settings-chinese
@@ -57,25 +51,24 @@ fi
 #高通平台调整
 DTS_PATH="./target/linux/qualcommax/dts/"
 if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
-	#无WIFI配置调整Q6大小
 	if [[ "${WRT_CONFIG,,}" == *"wifi"* && "${WRT_CONFIG,,}" == *"no"* ]]; then
 		find $DTS_PATH -type f ! -iname '*nowifi*' -exec sed -i 's/ipq\(6018\|8074\).dtsi/ipq\1-nowifi.dtsi/g' {} +
 		echo "qualcommax set up nowifi successfully!"
 	fi
 fi
 
-# ===== 强制开启 eBPF 与 BTF 支持 (DAE/DAED 核心依赖) =====
-echo "Injecting eBPF and BTF kernel configurations..."
+# ===== 强制注入 DAED 运行所需的 eBPF 与 BTF 内核依赖 =====
+echo "Injecting eBPF, BTF and BPF_EVENTS kernel configurations for DAED..."
 ./scripts/config -e KERNEL_BPF_SYSCALL
 ./scripts/config -e KERNEL_BPF_JIT
 ./scripts/config -e KERNEL_HAVE_EBPF_JIT
 ./scripts/config -e KERNEL_BPF_JIT_ALWAYS_ON
-./scripts/config -e KERNEL_BPF_EVENTS
+./scripts/config -e KERNEL_BPF_EVENTS          # DAED 强依赖此事件钩子
 ./scripts/config -e KERNEL_DEBUG_INFO
-./scripts/config -e KERNEL_DEBUG_INFO_BTF
+./scripts/config -e KERNEL_DEBUG_INFO_BTF      # DAED 强依赖 BTF 解析内核结构
 ./scripts/config -e KERNEL_DEBUG_INFO_BTF_MODULES
 ./scripts/config -e KERNEL_XDP_SOCKETS
 ./scripts/config -e KERNEL_NET_CLS_BPF
 ./scripts/config -e KERNEL_NET_ACT_BPF
-echo "eBPF and BTF configurations injected successfully!"
+echo "DAED dependencies injected successfully!"
 # ====================================================
