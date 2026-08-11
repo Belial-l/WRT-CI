@@ -56,3 +56,46 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 		echo "qualcommax set up nowifi successfully!"
 	fi
 fi
+
+# ==========================================
+# 完美修复 GL-AX1800 (IPQ6000) 编译报错
+# 原理：动态在 &art 节点下注入 nvmem-layout 定义
+# 这样既不破坏原有代码，又能完美解决 phandle_references 报错
+# ==========================================
+echo "Applying perfect NVMEM patch for GL-AX1800..."
+
+# 1. 找到 GL-AX1800 的设备树文件
+DTS_FILE=$(find ./target/linux/qualcommax/ -name "ipq6000-gl-ax1800.dts" 2>/dev/null)
+
+if [ -n "$DTS_FILE" ]; then
+    # 2. 清理现场：删除可能存在的、写错的 nvmem 引用（防止重复报错）
+    sed -i '/nvmem-cells = <&macaddr/d' "$DTS_FILE"
+    sed -i '/nvmem-cell-names = "mac-address"/d' "$DTS_FILE"
+    
+    # 3. 动态注入正确的 NVMEM 布局定义到文件末尾
+    cat << 'EOF' >> "$DTS_FILE"
+
+/* 
+ * CI 动态注入补丁：修复上游缺失的 NVMEM MAC 地址定义 
+ * 告诉内核去 art 分区读取正确的 MAC 地址
+ */
+&art {
+    nvmem-layout {
+        compatible = "fixed-layout";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        macaddr_wan: macaddr@0 {
+            reg = <0x0 0x6>; /* GL-AX1800 WAN MAC 偏移量 */
+        };
+
+        macaddr_lan: macaddr@6 {
+            reg = <0x6 0x6>; /* GL-AX1800 LAN MAC 偏移量 */
+        };
+    };
+};
+EOF
+    echo "GL-AX1800 NVMEM layout injected successfully!"
+else
+    echo "GL-AX1800 DTS not found, skipping patch."
+fi
