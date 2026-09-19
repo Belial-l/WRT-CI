@@ -1,20 +1,5 @@
 #!/bin/bash
 
-# ===== gettext 保险：上游若仍是 1.0，回退同世代 0.24.2 =====
-if [ -f "libs/gettext-full/Makefile" ] && grep -q "PKG_VERSION:=1.0" libs/gettext-full/Makefile; then
-	echo "Detected gettext 1.0, pinning to pre-bump 0.24.2..."
-	git clone --filter=blob:none --no-checkout https://github.com/VIKINGYFY/immortalwrt.git /tmp/gettext-fix
-	if (cd /tmp/gettext-fix && git checkout 45ae5043b752ec61b7c36b7443cc10aca721bd3a -- package/libs/gettext-full); then
-		rm -rf libs/gettext-full
-		cp -rf /tmp/gettext-fix/package/libs/gettext-full libs/
-		echo "gettext-full pinned to 0.24.2 successfully!"
-	else
-		echo "WARNING: gettext pin failed, keeping upstream version."
-	fi
-	rm -rf /tmp/gettext-fix
-fi
-# ==========================================================
-
 #安装和更新软件包
 UPDATE_PACKAGE() {
 	local PKG_NAME=$1
