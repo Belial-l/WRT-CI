@@ -1,13 +1,13 @@
 #!/bin/bash
 
+WRT_REPO='https://github.com/VIKINGYFY/immortalwrt'
+WRT_BRANCH='main'
+
 #WRT_REPO='https://github.com/LiBwrt/openwrt-6.x'
 #WRT_BRANCH='k6.12-nss'
 
-WRT_REPO='https://github.com/davidtall/immortalwrt'
-WRT_BRANCH='viking-main'
-
-#WRT_REPO='https://github.com/VIKINGYFY/immortalwrt'
-#WRT_BRANCH='main'
+#WRT_REPO='https://github.com/davidtall/immortalwrt'
+#WRT_BRANCH='viking-main'
 
 if [ -n "$1" ]; then
     # 如果有传递参数，赋值给WRT_TARGET
@@ -34,7 +34,7 @@ export WRT_THEME='argon'
 export WRT_IP='192.168.10.1'
 export WRT_CI='WSL-OpenWRT-CI'
 export WRT_ARCH=$(sed -n 's/.*_DEVICE_\(.*\)_DEVICE_.*/\1/p' $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt | head -n 1)
-export CI_NAME='QCA-6.18-LiBwrt'
+export CI_NAME='QCA-VIKING-eBPF' 
 export WRT_TARGET=$(grep -m 1 -oP '^CONFIG_TARGET_\K[\w]+(?=\=y)' $GITHUB_WORKSPACE/Config/$WRT_CONFIG.txt | tr '[:lower:]' '[:upper:]')
 
 . $GITHUB_WORKSPACE/Scripts/function.sh
@@ -51,6 +51,8 @@ else
   git pull
 fi
 #rm -rf feeds
+rm -rf build_dir staging_dir dl
+
 ./scripts/feeds update -a && ./scripts/feeds install -a
 
 cd package/
