@@ -66,12 +66,3 @@ find ./target/linux/qualcommax/ -type f -name "ipq6000-gl-ax1800.dts" -exec sed 
 find ./target/linux/qualcommax/ -type f \( -name "*.dts" -o -name "*.dtsi" \) -exec sed -i '/nvmem-cells = <&macaddr/d; /nvmem-cell-names = "mac-address"/d' {} +
 
 echo "IPQ60xx DTS hotfix applied successfully!"
-
-echo "🔒 Applying final security hardening overrides..."
-
-sed -i 's/# CONFIG_PACKAGE_luci-ssl-openssl is not set/CONFIG_PACKAGE_luci-ssl-openssl=y/g' ./.config
-sed -i 's/# CONFIG_PACKAGE_luci-ssl is not set/CONFIG_PACKAGE_luci-ssl=y/g' ./.config
-sed -i 's/CONFIG_SAMBA4_SERVER_NETBIOS=y/# CONFIG_SAMBA4_SERVER_NETBIOS is not set/g' ./.config
-sed -i 's/CONFIG_DROPBEAR_LEGACY_COMPAT=y/# CONFIG_DROPBEAR_LEGACY_COMPAT is not set/g' ./.config
-
-echo "✅ Security hardening overrides applied successfully!"
