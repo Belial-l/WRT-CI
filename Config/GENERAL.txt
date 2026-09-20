@@ -23,7 +23,6 @@ CONFIG_PACKAGE_kmod-usb-dwc3=m
 CONFIG_PACKAGE_kmod-usb-dwc3-qcom=m
 CONFIG_PACKAGE_kmod-scsi-core=y
 CONFIG_PACKAGE_kmod-usb-core=y
-CONFIG_PACKAGE_kmod-usb-xhci-hcd=m
 CONFIG_PACKAGE_kmod-usb-storage=m
 CONFIG_PACKAGE_kmod-usb-storage-uas=m
 CONFIG_PACKAGE_kmod-fs-ext4=m
@@ -78,6 +77,7 @@ CONFIG_PACKAGE_qmodem-smsd=n
 # CONFIG_SAMBA4_SERVER_AVAHI is not set
 # CONFIG_DROPBEAR_LEGACY_COMPAT is not set
 # CONFIG_PACKAGE_kmod-usb-storage-extras is not set
+# CONFIG_PACKAGE_kmod-usb-xhci-hcd is not set
 # CONFIG_PACKAGE_kmod-usb3 is not set
 # CONFIG_MODULE_DEFAULT_kmod-usb3 is not set
 # CONFIG_DEFAULT_kmod-usb3 is not set
