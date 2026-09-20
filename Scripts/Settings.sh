@@ -57,24 +57,21 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 	fi
 fi
 
-# ==========================================
-# 修复 GL-AX1800 及其他 IPQ60xx 设备编译报错 (终极兜底方案)
-# 原理：直接删除设备树中报错的 nvmem-cells 引用
-# 说明：OpenWrt 会在系统启动时通过 /etc/board.d/02_network 脚本
-# 自动从 Flash 读取并修正 MAC 地址。删除内核 DTS 中的引用
-# 完全不影响最终的固件功能和网络正常使用。
-# ==========================================
 echo "Applying DTS hotfix for IPQ60xx MAC address errors..."
 
-# 1. 找到并清理公共头文件 ipq6018-ess.dtsi 中的报错引用 (这是真正的报错源头)
 find ./target/linux/qualcommax/ -type f -name "ipq6018-ess.dtsi" -exec sed -i '/nvmem-cells = <&macaddr/d' {} +
 find ./target/linux/qualcommax/ -type f -name "ipq6018-ess.dtsi" -exec sed -i '/nvmem-cell-names = "mac-address"/d' {} +
-
-# 2. 清理特定设备文件 ipq6000-gl-ax1800.dts 中的报错引用
 find ./target/linux/qualcommax/ -type f -name "ipq6000-gl-ax1800.dts" -exec sed -i '/nvmem-cells = <&macaddr/d' {} +
 find ./target/linux/qualcommax/ -type f -name "ipq6000-gl-ax1800.dts" -exec sed -i '/nvmem-cell-names = "mac-address"/d' {} +
-
-# 3. 广撒网：清理 qualcommax 目录下所有 dts/dtsi 文件中残留的报错代码
 find ./target/linux/qualcommax/ -type f \( -name "*.dts" -o -name "*.dtsi" \) -exec sed -i '/nvmem-cells = <&macaddr/d; /nvmem-cell-names = "mac-address"/d' {} +
 
 echo "IPQ60xx DTS hotfix applied successfully!"
+
+echo "🔒 Applying final security hardening overrides..."
+
+sed -i 's/# CONFIG_PACKAGE_luci-ssl-openssl is not set/CONFIG_PACKAGE_luci-ssl-openssl=y/g' ./.config
+sed -i 's/# CONFIG_PACKAGE_luci-ssl is not set/CONFIG_PACKAGE_luci-ssl=y/g' ./.config
+sed -i 's/CONFIG_SAMBA4_SERVER_NETBIOS=y/# CONFIG_SAMBA4_SERVER_NETBIOS is not set/g' ./.config
+sed -i 's/CONFIG_DROPBEAR_LEGACY_COMPAT=y/# CONFIG_DROPBEAR_LEGACY_COMPAT is not set/g' ./.config
+
+echo "✅ Security hardening overrides applied successfully!"
