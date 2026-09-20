@@ -118,6 +118,23 @@ function remove_wifi() {
   rm -rf package/firmware/ipq-wifi
 }
 
+# ========== 新增：移除不需要的包（USB串口、USB3、存储扩展、automount、LED等） ==========
+function remove_unwanted_packages() {
+  local target=$1
+  # 需要从 DEFAULT_PACKAGES 中移除的包名模式
+  local unwanted_pkg_pattern='kmod-usb-serial[^ ]*|kmod-usb3|kmod-usb-storage-extras|automount|kmod-leds-gpio|kmod-leds-pca963x|kmod-leds-pwm|luci-app-athena-led'
+  
+  # 从 qualcommax/Makefile 中删除
+  sed -i -E ":again; s/(^|[[:space:]])-?(${unwanted_pkg_pattern})([[:space:]]|$)/ /g; t again; s/[[:space:]]+$//" ./target/linux/qualcommax/Makefile
+  # 从子目标 target.mk 中删除
+  sed -i -E ":again; s/(^|[[:space:]])-?(${unwanted_pkg_pattern})([[:space:]]|$)/ /g; t again; s/[[:space:]]+$//" ./target/linux/qualcommax/${target}/target.mk
+  # 从 image 的 mk 中删除（如果有）
+  sed -i -E ":again; s/(^|[[:space:]])-?(${unwanted_pkg_pattern})([[:space:]]|$)/ /g; t again; s/[[:space:]]+$//" ./target/linux/qualcommax/image/${target}.mk
+  
+  echo "Removed unwanted packages from DEFAULT_PACKAGES: ${unwanted_pkg_pattern}"
+}
+# ================================================================================
+
 function set_kernel_size() {
   #修改jdc ax1800 pro 的内核大小为12M
   image_file='./target/linux/qualcommax/image/ipq60xx.mk'
@@ -153,6 +170,10 @@ function generate_config() {
     remove_wifi $target
   fi
 
+  # ========== 新增：删除不需要的包 ==========
+  remove_unwanted_packages $target
+  # =======================================
+
   set_nss_driver $config_file
   #增加ebpf
   cat_ebpf_config $config_file
@@ -161,7 +182,3 @@ function generate_config() {
   #增加内核选项
   cat_kernel_config "target/linux/qualcommax/${target}/config-default"
 }
-
-
-
-
