@@ -1,12 +1,7 @@
 #增加插件
 CONFIG_PACKAGE_luci-app-mini-diskmanager=y
 CONFIG_PACKAGE_luci-app-fullconenat-sonic=y
-CONFIG_PACKAGE_fullconenat-sonic=y
-#添加ksmbd相关
 CONFIG_PACKAGE_luci-app-ksmbd=y
-CONFIG_PACKAGE_ksmbd-server=y
-CONFIG_PACKAGE_ksmbd-utils=y
-CONFIG_PACKAGE_wsdd2=y
 #备用4G_5G插件
 # CONFIG_PACKAGE_kmod-usb-serial is not set
 # CONFIG_PACKAGE_kmod-usb-serial-wwan is not set
