@@ -39,7 +39,6 @@ CONFIG_PACKAGE_kmod-sched-core=y
 # CONFIG_FWUPD_PLUGIN_MODEMMANAGER is not set
 
 #插件黑名单
-CONFIG_PACKAGE_v2ray-geodata-updater=n
 CONFIG_PACKAGE_luci-app-attendedsysupgrade=n
 CONFIG_PACKAGE_qmodem=n
 CONFIG_PACKAGE_luci-app-qmodem-next=n
