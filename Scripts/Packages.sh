@@ -75,7 +75,8 @@ UPDATE_PACKAGE "timecontrol" "sirpdboy/luci-app-timecontrol" "main"
 UPDATE_PACKAGE "viking" "VIKINGYFY/packages" "main" "" "axonhub gecoosac luci-app-timewol luci-app-wolplus"
 UPDATE_PACKAGE "vnt" "lmq8267/luci-app-vnt" "main"
 
-UPDATE_PACKAGE "luci-app-daed" "QiuSimons/luci-app-daed" "kix"
+# UPDATE_PACKAGE "luci-app-daed" "QiuSimons/luci-app-daed" "kix"
+UPDATE_PACKAGE "daede" "kenzok8/openwrt-daede" "main" "pkg"
 UPDATE_PACKAGE "luci-app-dae" "davidtall/luci-app-dae" "kix"
 UPDATE_PACKAGE "luci-app-pushbot" "zzsj0928/luci-app-pushbot" "master"
 UPDATE_PACKAGE "luci-app-nginx-manager" "hello-yunshu/luci-app-nginx-manager" "main"
@@ -127,8 +128,8 @@ if [ -f "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh" ]; then
 fi
 
 #删除官方的默认插件
-rm -rf ../feeds/luci/applications/luci-app-{passwall*,mosdns,dockerman,dae*,bypass*}
-rm -rf ../feeds/packages/net/{v2ray-geodata,dae*}
+rm -rf ../feeds/luci/applications/luci-app-{passwall*,mosdns,dockerman,dae*,daed*,bypass*}
+rm -rf ../feeds/packages/net/{v2ray-geodata,dae*,daed*}
 rm -rf ../feeds/packages/net/mihomo-alpha
 rm -rf ../feeds/packages/net/mihomo-meta
 
