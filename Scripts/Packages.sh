@@ -133,6 +133,9 @@ rm -rf ../feeds/packages/net/{v2ray-geodata,dae*,daed*}
 rm -rf ../feeds/packages/net/mihomo-alpha
 rm -rf ../feeds/packages/net/mihomo-meta
 rm -rf ./luci-app-daede
+rm -rf ./openwrt-daede
+rm -rf ./dae
+rm -rf ./daed
 
 
 # cp -r $GITHUB_WORKSPACE/package/v2ray-geodata ./
