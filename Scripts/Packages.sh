@@ -133,7 +133,7 @@ rm -rf ../feeds/packages/net/{v2ray-geodata,dae*,daed*}
 rm -rf ../feeds/packages/net/mihomo-alpha
 rm -rf ../feeds/packages/net/mihomo-meta
 
-cp -r $GITHUB_WORKSPACE/package/v2ray-geodata ./
+# cp -r $GITHUB_WORKSPACE/package/v2ray-geodata ./
 #修复daed/Makefile
 # sed -i 's/pnpm install ; /pnpm install --no-frozen-lockfile ; /g' luci-app-daed/daed/Makefile
 # sed -i 's|/run/i  procd_set_param|/procd_set_param command/i \tprocd_set_param|g' luci-app-daed/luci-app-daed/root/etc/init.d/luci_daed
