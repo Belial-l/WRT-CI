@@ -118,11 +118,11 @@ function remove_wifi() {
   rm -rf package/firmware/ipq-wifi
 }
 
-# ========== 新增：移除不需要的包（USB串口、USB3、存储扩展、automount、LED等） ==========
+# ========== 新增：移除不需要的包（USB串口、存储扩展、automount、LED等） ==========
 function remove_unwanted_packages() {
   local target=$1
   # 需要从 DEFAULT_PACKAGES 中移除的包名模式
-  local unwanted_pkg_pattern='kmod-usb-serial[^ ]*|kmod-usb3|kmod-usb-storage-extras|automount|kmod-leds-gpio|kmod-leds-pca963x|kmod-leds-pwm|luci-app-athena-led'
+  local unwanted_pkg_pattern='kmod-usb-serial[^ ]*|kmod-usb-storage-extras|automount|kmod-leds-gpio|kmod-leds-pca963x|kmod-leds-pwm|luci-app-athena-led'
   
   # 从 qualcommax/Makefile 中删除
   sed -i -E ":again; s/(^|[[:space:]])-?(${unwanted_pkg_pattern})([[:space:]]|$)/ /g; t again; s/[[:space:]]+$//" ./target/linux/qualcommax/Makefile
