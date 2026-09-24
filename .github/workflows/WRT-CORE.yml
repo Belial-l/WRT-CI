@@ -89,7 +89,7 @@ jobs:
           testing: false
 
       - name: Checkout Projects
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
         
       - name: Initialization Environment
         env:
@@ -146,7 +146,7 @@ jobs:
           find ./ -maxdepth 3 -type f -iregex ".*\(txt\|sh\)$" -exec dos2unix {} \; -exec chmod +x {} \;
 
       - name: Cache Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ./wrt/.ccache
