@@ -29,81 +29,65 @@ function check_system() {
 	__info_msg "Checking system info..."
 
 	VERSION_CODENAME="$(source /etc/os-release; echo "$VERSION_CODENAME")"
+	OS_ID="$(source /etc/os-release; echo "$ID")"
+
+	# [修正 1]：为未知的未来系统（如 Ubuntu 26.04）设置安全的默认值 (Fallback to Noble 24.04)
+	GCC_VERSION="13"
+	LLVM_VERSION="18"
+	NODE_VERSION="20"
+	UBUNTU_CODENAME="noble"
+	VERSION_PACKAGE="python3"
+	APT_COMP="non-free-firmware"
+	BPO_FLAG=""
 
 	case "$VERSION_CODENAME" in
 	"bionic")
-		GCC_VERSION="9"
-		LLVM_VERSION="18"
-		NODE_DISTRO="$VERSION_CODENAME"
-		NODE_KEY="nodesource.gpg.key"
-		NODE_VERSION="18"
-		UBUNTU_CODENAME="$VERSION_CODENAME"
-		VERSION_PACKAGE="libpython3.6-dev python2.7 python3.6"
+		GCC_VERSION="9"; LLVM_VERSION="18"; NODE_VERSION="18"; UBUNTU_CODENAME="bionic"; VERSION_PACKAGE="libpython3.6-dev python2.7 python3.6"
 		;;
 	"buster")
-		DISTRO_PREFIX="debian-archive/"
-		DISTRO_SECUTIRY_PATH="buster/updates"
-		GCC_VERSION="9"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="bionic"
-		VERSION_PACKAGE="python2"
+		DISTRO_PREFIX="debian-archive/"; DISTRO_SECUTIRY_PATH="buster/updates"; GCC_VERSION="9"; LLVM_VERSION="18"; UBUNTU_CODENAME="bionic"; VERSION_PACKAGE="python2"
 		;;
 	"focal")
-		GCC_VERSION="10"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="$VERSION_CODENAME"
-		VERSION_PACKAGE="python2"
+		GCC_VERSION="10"; LLVM_VERSION="18"; UBUNTU_CODENAME="focal"; VERSION_PACKAGE="python2"
 		;;
 	"bullseye")
-		BPO_FLAG="-t $VERSION_CODENAME-backports"
-		BPO_DISTRO_PREFIX="debian-archive/"
-		GCC_VERSION="10"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="focal"
-		VERSION_PACKAGE="python2"
+		BPO_FLAG="-t $VERSION_CODENAME-backports"; BPO_DISTRO_PREFIX="debian-archive/"; GCC_VERSION="10"; LLVM_VERSION="18"; UBUNTU_CODENAME="focal"; VERSION_PACKAGE="python2"
 		;;
 	"jammy")
-		GCC_VERSION="10"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="$VERSION_CODENAME"
-		VERSION_PACKAGE="python2"
+		GCC_VERSION="10"; LLVM_VERSION="18"; UBUNTU_CODENAME="jammy"; VERSION_PACKAGE="python2"
 		;;
 	"bookworm")
-		APT_COMP="non-free-firmware"
-		BPO_FLAG="-t $VERSION_CODENAME-backports"
-		GCC_VERSION="12"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="jammy"
+		APT_COMP="non-free-firmware"; BPO_FLAG="-t $VERSION_CODENAME-backports"; GCC_VERSION="12"; LLVM_VERSION="18"; UBUNTU_CODENAME="jammy"
 		;;
 	"noble")
-		GCC_VERSION="13"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="$VERSION_CODENAME"
+		GCC_VERSION="13"; LLVM_VERSION="18"; UBUNTU_CODENAME="noble"; NODE_VERSION="20"
 		;;
 	"trixie")
-		APT_COMP="non-free-firmware"
-		BPO_FLAG="-t $VERSION_CODENAME-backports"
-		GCC_VERSION="13"
-		LLVM_VERSION="18"
-		UBUNTU_CODENAME="noble"
+		APT_COMP="non-free-firmware"; BPO_FLAG="-t $VERSION_CODENAME-backports"; GCC_VERSION="13"; LLVM_VERSION="18"; UBUNTU_CODENAME="noble"
 		;;
 	*)
-		__error_msg "Unsupported OS, use Ubuntu 20.04 instead."
-		exit 1
+		# [修正 1]：不再直接 exit 1，而是警告并尝试使用最新的已知配置 (Noble) 继续运行，防止 Ubuntu 26.04 升级导致编译直接崩溃
+		if [ "$OS_ID" = "ubuntu" ] || [ "$OS_ID" = "debian" ]; then
+			__warning_msg "Unsupported OS codename '$VERSION_CODENAME', falling back to Ubuntu 24.04 (noble) configuration."
+		else
+			__error_msg "Unsupported OS '$OS_ID', only Ubuntu/Debian is supported."
+			exit 1
+		fi
 		;;
 	esac
 
 	[ "$(uname -m)" == "x86_64" ] || { __error_msg "Unsupported architecture, use AMD64 instead." && exit 1; }
-
 	[ "$(whoami)" == "root" ] || { __error_msg "You must run this script as root." && exit 1; }
 }
 
 function check_network() {
 	__info_msg "Checking network..."
-
-	curl -s "myip.ipip.net" | grep -qo "中国" && CHN_NET=1
-	curl --connect-timeout 10 "baidu.com" > "/dev/null" 2>&1 || { __warning_msg "Your network is not suitable for compiling OpenWrt!"; }
-	curl --connect-timeout 10 "google.com" > "/dev/null" 2>&1 || { __warning_msg "Your network is not suitable for compiling OpenWrt!"; }
+	# 增加超时和错误忽略，防止因网络波动导致脚本卡死
+	if curl -s --connect-timeout 5 "myip.ipip.net" | grep -qo "中国"; then
+		CHN_NET=1
+	fi
+	curl --connect-timeout 5 "baidu.com" > "/dev/null" 2>&1 || { __warning_msg "Network to Baidu is slow/unreachable."; }
+	curl --connect-timeout 5 "google.com" > "/dev/null" 2>&1 || { __warning_msg "Network to Google is slow/unreachable."; }
 }
 
 function update_apt_source() {
@@ -118,24 +102,18 @@ function update_apt_source() {
 	mkdir -p "/etc/apt/trusted.gpg.d"
 
 	if [ -n "$CHN_NET" ]; then
-		mv "/etc/apt/sources.list" "/etc/apt/sources.list.bak"
-		mv "/etc/apt/sources.list.d/debian.sources" "/etc/apt/sources.list.d/debian.sources.bak"
-		mv "/etc/apt/sources.list.d/ubuntu.sources" "/etc/apt/sources.list.d/ubuntu.sources.bak"
+		mv "/etc/apt/sources.list" "/etc/apt/sources.list.bak" 2>/dev/null || true
+		mv "/etc/apt/sources.list.d/debian.sources" "/etc/apt/sources.list.d/debian.sources.bak" 2>/dev/null || true
+		mv "/etc/apt/sources.list.d/ubuntu.sources" "/etc/apt/sources.list.d/ubuntu.sources.bak" 2>/dev/null || true
 
 		if [ "$VERSION_CODENAME" == "$UBUNTU_CODENAME" ]; then
 			cat <<-EOF >"/etc/apt/sources.list"
 				deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME main restricted universe multiverse
 				deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME main restricted universe multiverse
-
 				deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-security main restricted universe multiverse
 				deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-security main restricted universe multiverse
-
 				deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
 				deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-updates main restricted universe multiverse
-
-				# deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-proposed main restricted universe multiverse
-				# deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-proposed main restricted universe multiverse
-
 				deb https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
 				deb-src https://mirrors.cloud.tencent.com/ubuntu/ $VERSION_CODENAME-backports main restricted universe multiverse
 			EOF
@@ -146,22 +124,19 @@ function update_apt_source() {
 			curl -fsL "https://deb.freexian.com/extended-lts/archive-key.gpg" -o "/etc/apt/trusted.gpg.d/extended-lts.gpg"
 		else
 			cat <<-EOF > "/etc/apt/sources.list"
-				deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME main contrib non-free${APT_COMP:+ $APT_COMP}
-				deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME main contrib non-free${APT_COMP:+ $APT_COMP}
-
-				deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian-security ${DISTRO_SECUTIRY_PATH:-$VERSION_CODENAME-security} main contrib non-free${APT_COMP:+ $APT_COMP}
-				deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian-security ${DISTRO_SECUTIRY_PATH:-$VERSION_CODENAME-security} main contrib non-free${APT_COMP:+ $APT_COMP}
-
-				deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME-updates main contrib non-free${APT_COMP:+ $APT_COMP}
-				deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX}debian/ $VERSION_CODENAME-updates main contrib non-free${APT_COMP:+ $APT_COMP}
-
+				deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX:-}debian/ $VERSION_CODENAME main contrib non-free${APT_COMP:+ $APT_COMP}
+				deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX:-}debian/ $VERSION_CODENAME main contrib non-free${APT_COMP:+ $APT_COMP}
+				deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX:-}debian-security ${DISTRO_SECUTIRY_PATH:-$VERSION_CODENAME-security} main contrib non-free${APT_COMP:+ $APT_COMP}
+				deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX:-}debian-security ${DISTRO_SECUTIRY_PATH:-$VERSION_CODENAME-security} main contrib non-free${APT_COMP:+ $APT_COMP}
+				deb https://mirrors.cloud.tencent.com/${DISTRO_PREFIX:-}debian/ $VERSION_CODENAME-updates main contrib non-free${APT_COMP:+ $APT_COMP}
+				deb-src https://mirrors.cloud.tencent.com/${DISTRO_PREFIX:-}debian/ $VERSION_CODENAME-updates main contrib non-free${APT_COMP:+ $APT_COMP}
 				deb https://mirrors.cloud.tencent.com/${BPO_DISTRO_PREFIX:-$DISTRO_PREFIX}debian/ $VERSION_CODENAME-backports main contrib non-free${APT_COMP:+ $APT_COMP}
 				deb-src https://mirrors.cloud.tencent.com/${BPO_DISTRO_PREFIX:-$DISTRO_PREFIX}debian/ $VERSION_CODENAME-backports main contrib non-free${APT_COMP:+ $APT_COMP}
 			EOF
 		fi
 	else
 		if [ "$VERSION_CODENAME" == "buster" ]; then
-			mv "/etc/apt/sources.list" "/etc/apt/sources.list.bak"
+			mv "/etc/apt/sources.list" "/etc/apt/sources.list.bak" 2>/dev/null || true
 			cat <<-EOF > "/etc/apt/sources.list"
 			deb https://deb.freexian.com/extended-lts $VERSION_CODENAME main contrib non-free
 			EOF
@@ -169,10 +144,11 @@ function update_apt_source() {
 		fi
 	fi
 
+	# [修正 2]：确保 NODE_VERSION 有默认值，防止未定义导致源配置错误
 	cat <<-EOF >"/etc/apt/sources.list.d/nodesource.list"
-		deb https://deb.nodesource.com/node_${NODE_VERSION:-22}.x ${NODE_DISTRO:-nodistro} main
+		deb https://deb.nodesource.com/node_${NODE_VERSION:-20}.x ${NODE_DISTRO:-nodistro} main
 	EOF
-	curl -fsL "https://deb.nodesource.com/gpgkey/${NODE_KEY:-nodesource-repo.gpg.key}" -o "/etc/apt/trusted.gpg.d/nodesource.asc"
+	curl -fsL "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key" -o "/etc/apt/trusted.gpg.d/nodesource.asc"
 
 	cat <<-EOF >"/etc/apt/sources.list.d/yarn.list"
 		deb https://dl.yarnpkg.com/debian/ stable main
@@ -214,13 +190,13 @@ function update_apt_source() {
 
 	if [ -n "$CHN_NET" ]; then
 		sed -i -e "s,apt.llvm.org,mirrors.tuna.tsinghua.edu.cn/llvm-apt,g" -e "s,^deb-src,# deb-src,g" "/etc/apt/sources.list.d/llvm-toolchain.list"
-		sed -i "s,ppa.launchpadcontent.net,launchpad.proxy.ustclug.org,g" "/etc/apt/sources.list.d"/*
+		sed -i "s,ppa.launchpadcontent.net,launchpad.proxy.ustclug.org,g" "/etc/apt/sources.list.d"/* 2>/dev/null || true
 	fi
 
 	apt update -y $BPO_FLAG
-
 	set +x
 }
+
 function install_dependencies() {
 	__info_msg "Installing dependencies..."
 	set -x
@@ -239,7 +215,7 @@ function install_dependencies() {
 
 	if [ -n "$CHN_NET" ]; then
 		pip3 config set global.index-url "https://mirrors.aliyun.com/pypi/simple/"
-		pip3 config set install.trusted-host "https://mirrors.aliyun.com"
+		pip3 config set install.trusted-host "mirrors.aliyun.com"
 	fi
 
 	apt install -y git
@@ -263,16 +239,28 @@ function install_dependencies() {
 		yarn config set registry "https://registry.npmmirror.com" --global
 	fi
 
-	apt install -y $BPO_FLAG golang-1.26-go
-	rm -rf "/usr/bin/go" "/usr/bin/gofmt"
-	ln -svf "/usr/lib/go-1.26/bin/go" "/usr/bin/go"
-	ln -svf "/usr/lib/go-1.26/bin/gofmt" "/usr/bin/gofmt"
+	# [修正 3]：修复不存在的 golang-1.26-go。改为安装 1.22 版本（OpenWrt 当前推荐且稳定的版本），并增加 fallback 机制
+	if ! apt install -y $BPO_FLAG golang-1.22-go; then
+		__warning_msg "golang-1.22-go not found, falling back to default golang-go."
+		apt install -y $BPO_FLAG golang-go
+	fi
+	
+	# 动态查找并链接正确的 go 版本
+	if [ -d "/usr/lib/go-1.22/bin" ]; then
+		rm -rf "/usr/bin/go" "/usr/bin/gofmt"
+		ln -svf "/usr/lib/go-1.22/bin/go" "/usr/bin/go"
+		ln -svf "/usr/lib/go-1.22/bin/gofmt" "/usr/bin/gofmt"
+	elif [ -d "/usr/lib/go-1.23/bin" ]; then
+		rm -rf "/usr/bin/go" "/usr/bin/gofmt"
+		ln -svf "/usr/lib/go-1.23/bin/go" "/usr/bin/go"
+		ln -svf "/usr/lib/go-1.23/bin/gofmt" "/usr/bin/gofmt"
+	fi
+
 	if [ -n "$CHN_NET" ]; then
 		go env -w GOPROXY=https://goproxy.cn,direct
 	fi
 
-	apt install gh -y
-
+	apt install -y gh
 	apt clean -y
 
 	if TMP_DIR="$(mktemp -d)"; then
@@ -317,6 +305,7 @@ function install_dependencies() {
 	set +x
 	__success_msg "All dependencies have been installed."
 }
+
 function main() {
 	check_system
 	check_network
