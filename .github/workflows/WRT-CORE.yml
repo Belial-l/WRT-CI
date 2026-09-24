@@ -46,6 +46,7 @@ on:
       WRT_ARCH:
         required: false
         type: string
+
 env:
   GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
   WRT_CONFIG: ${{inputs.WRT_CONFIG}}
@@ -116,7 +117,7 @@ jobs:
         if: env.GO_INSTALLED != 'true'
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26'
+          go-version: '1.22' # [修正] 改为存在的稳定版本
       - run: go version
 
       - name: Initialization Values
@@ -244,7 +245,7 @@ jobs:
           fi
 
       - name: Release Firmware
-        uses: softprops/action-gh-release@master
+        uses: softprops/action-gh-release@v2 # [修正] 改为固定版本 v2，避免 master 分支变动导致失败
         with:
           tag_name: ${{ env.CI_NAME || 'WRT' }}-${{env.WRT_CONFIG}}_${{env.WRT_DATE}}
           files: ./wrt/upload/*.*
