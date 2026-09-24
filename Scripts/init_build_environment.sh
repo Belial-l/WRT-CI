@@ -31,7 +31,7 @@ function check_system() {
 	VERSION_CODENAME="$(source /etc/os-release; echo "$VERSION_CODENAME")"
 	OS_ID="$(source /etc/os-release; echo "$ID")"
 
-	# [修正 1]：为未知的未来系统（如 Ubuntu 26.04）设置安全的默认值 (Fallback to Noble 24.04)
+	# [修正]：为未知的未来系统（如 Ubuntu 26.04）设置安全的默认值 (Fallback to Noble 24.04)
 	GCC_VERSION="13"
 	LLVM_VERSION="18"
 	NODE_VERSION="20"
@@ -66,7 +66,7 @@ function check_system() {
 		APT_COMP="non-free-firmware"; BPO_FLAG="-t $VERSION_CODENAME-backports"; GCC_VERSION="13"; LLVM_VERSION="18"; UBUNTU_CODENAME="noble"
 		;;
 	*)
-		# [修正 1]：不再直接 exit 1，而是警告并尝试使用最新的已知配置 (Noble) 继续运行，防止 Ubuntu 26.04 升级导致编译直接崩溃
+		# [修正]：不再直接 exit 1，而是警告并尝试使用最新的已知配置 (Noble) 继续运行
 		if [ "$OS_ID" = "ubuntu" ] || [ "$OS_ID" = "debian" ]; then
 			__warning_msg "Unsupported OS codename '$VERSION_CODENAME', falling back to Ubuntu 24.04 (noble) configuration."
 		else
@@ -82,7 +82,7 @@ function check_system() {
 
 function check_network() {
 	__info_msg "Checking network..."
-	# 增加超时和错误忽略，防止因网络波动导致脚本卡死
+	# [修正]：增加超时限制，防止脚本卡死
 	if curl -s --connect-timeout 5 "myip.ipip.net" | grep -qo "中国"; then
 		CHN_NET=1
 	fi
@@ -144,7 +144,6 @@ function update_apt_source() {
 		fi
 	fi
 
-	# [修正 2]：确保 NODE_VERSION 有默认值，防止未定义导致源配置错误
 	cat <<-EOF >"/etc/apt/sources.list.d/nodesource.list"
 		deb https://deb.nodesource.com/node_${NODE_VERSION:-20}.x ${NODE_DISTRO:-nodistro} main
 	EOF
@@ -239,7 +238,7 @@ function install_dependencies() {
 		yarn config set registry "https://registry.npmmirror.com" --global
 	fi
 
-	# [修正 3]：修复不存在的 golang-1.26-go。改为安装 1.22 版本（OpenWrt 当前推荐且稳定的版本），并增加 fallback 机制
+	# [修正]：修复不存在的 golang-1.26-go。改为安装 1.22 版本，并增加 fallback 机制
 	if ! apt install -y $BPO_FLAG golang-1.22-go; then
 		__warning_msg "golang-1.22-go not found, falling back to default golang-go."
 		apt install -y $BPO_FLAG golang-go
